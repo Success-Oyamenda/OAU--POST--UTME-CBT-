@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>JAMB CBT App</title>
+<style>
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0; 
+    background: #795548;
+    color: #222;
+    display: flex;
+    min-height: 100vh;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  #app {
+    background: #fff;
+    max-width: 600px;
+    width: 100%;
+    border-radius: 8px;
+    box-shadow: 0 0 35px rgba(0,0,0,0.1);
+    padding: 30px 25px;
+    display: flex;
+    flex-direction: column;
+  }
+  h1 {
+    text-align: center;
+    margin-bottom: 15px;
+    color: #004080;
+  }
+  #question-number {
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: #555;
+  }
+  #question-text {
+    font-size: 1.2rem;
+    margin-bottom: 20px;
+  }
+  footer {
+      color: #999;
+      font-size: 0.9rem;
+      text-align: center;
+      margin-top: 10px;
+      padding: 1px;
+    }
+
+  .options {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 20px 0;
+  }
+  .options li {
+    margin-bottom: 10px;
+  }
+  .option-btn {
+    width: 100%;
+    background: #e3e8f0;
+    border: none;
+    border-radius: 6px;
+    padding: 12px 16px;
+    font-size: 1rem;
+    cursor: pointer;
+    text-align: left;
+    transition: background-color 0.3s ease;
+  }
+  .option-btn:hover:not(:disabled) {
+    background-color: #d0daf7;
+  }
+  .option-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.8;
+  }
+  .correct {
+    background-color: #4CAF50 !important;
+    color: #FFFFFF;
+    font-family: Times New Roman;
+  }
+  .wrong {
+    background-color: #f44336 !important;
+    color: white;
+  }
+  #feedback {
+    font-weight: 600;
+    font-size: 1.1rem;
+    margin-bottom: 20px;
+    min-height: 30px;
+  }
+  #next-btn, #reset-btn {
+    background-color: #004080;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 6px;
+    font-size: 1rem;
+    cursor: pointer;
+    width: 100%;
+    max-width: 200px;
+    align-self: center;
+    transition: background-color 0.3s ease;
+  }
+  #next-btn:disabled {
+    background-color: #8b9dc3;
+    cursor: not-allowed;
+  }
+  #next-btn:hover:not(:disabled),
+  #reset-btn:hover {
+    background-color: #003366;
+  }
+  #score-board {
+    text-align: center;
+  }
+  #score-board h2 {
+    margin-bottom: 15px;
+    color: #004080;
+  }
+  #score-board p {
+    font-size: 1.1rem;
+    margin: 5px 0;
+  }
+  @media (max-width: 480px) {
+    #app {
+      padding: 20px 15px;
+    }
+    #question-text {
+      font-size: 1rem;
+    }
+    .option-btn {
+      font-size: 0.9rem;
+      padding: 10px 12px;
+    }
+  }
+</style>
+</head>
+<body>
+<div id="app" role="main" aria-label="JAMB CBT App">
+  <h1>OAU PHYSICS TEST</h1>
+  <div id="quiz-container" aria-live="polite">
+    <div id="question-number"></div>
+    <div id="question-text"></div>
+    <ul class="options" role="list" id="options-list"></ul>
+    <div id="feedback" aria-live="assertive"></div>
+    <button id="next-btn" disabled>Next Question</button>
+    <br><b>
+  <footer>
+    © Success Isaac ( Success_Dev )<br>
+    email oyamendasuccess02@gmail.com
+  </footer>
+  </div>
+
+  <div id="score-board" style="display:none;">
+    <h2>Your Score</h2>
+    <p id="score-text"></p>
+    <p id="correct-text"></p>
+    <p id="wrong-text"></p>
+    <button id="reset-btn">Restart Quiz</button>
+  </div>
+</div>
+
+<script>
+(() => {
+  // QUESTION BANK (hidden here - add your own questions)
+  // Format:
+  // {
+  //   question: "Question text",
+  //   options: ["Option A", "Option B", "Option C", "Option D"],
+  //   answerIndex: 1 // zero-based index of correct answer in options array
+  // }
+  const questionBank = [
+  {
+    question: "Which of the following is correct about a pinhole camera, except?",
+    options: [
+      "A If the object is moved closer to the pinhole, a larger image will be formed on the screen.",
+      "B By replacing the screen with a photographic plate or film, photographs of objects may be taken.",
+      "C If the pinhole is made larger, the image will be blurred.",
+      "D The bigger the hole, the sharper the image."
+    ],
+    answerIndex: 3,
+  },
+  {
+    question: "Which of these is not a correct representation of the lens formula?",
+    options: [
+      "A 1/u + 1/v = 1/f",
+      "B 1/u + 1/v = u/f",
+      "C 1/u + 1/v = v/f",
+      "D 1/u + 1/v = 1/m"
+    ],
+    answerIndex: 3,
+  },
+  {
+    question: "What is the magnification of the image formed at 25 cm from a concave mirror of focal length 10 cm?",
+    options: ["A 1.5", "B 1.0", "C 2.0", "D 3.3"],
+    answerIndex: 0,
+  },
+  {
+    question: "A 3-microfarad capacitor is connected to a 6.0-volt battery. How much energy is stored by the system?",
+    options: [
+      "A 54.0 microjoules",
+      "B 18.0 microjoules",
+      "C 36.0 microjoules",
+      "D 22.5 microjoules"
+    ],
+    answerIndex: 1,
+  },
+  {
+    question: "A concave mirror of radius of curvature 10 cm forms an erect image 20 cm from the mirror and 4 cm high. The position of the object from the mirror is:",
+    options: ["A 4 cm", "B 10 cm", "C 5 cm", "D 8 cm"],
+    answerIndex: 2,
+  },
+  {
+    question: "A 10-volt battery is connected in series to 25Ω and 35Ω resistors. Determine the power developed in the 35Ω resistor.",
+    options: ["A 4 watts", "B 12 watts", "C 20 watts", "D 8 watts"],
+    answerIndex: 0,
+  },
+  {
+    question: "At what position of an object does a convex mirror form a magnified, erect, and virtual image?",
+    options: [
+      "A Between the principal focus and the pole",
+      "B At the centre of curvature",
+      "C Between the principal focus and the centre of curvature",
+      "D Beyond the centre of curvature"
+    ],
+    answerIndex: 0,
+  },
+  {
+    question: "An electron falls from rest through a potential difference of 200 V. What is its de Broglie wavelength?",
+    options: ["A 615 nm", "B 165 nm", "C 567 nm", "D 868 nm"],
+    answerIndex: 0,
+  },
+  {
+    question: "A beam of light strikes a metal surface, resulting in the emission of X electrons. If the intensity of the light beam is tripled under the same experimental setup, the emitted electrons:",
+    options: [
+      "A Increase in number",
+      "B Increase in number in a given time interval and become more energetic",
+      "C Become one-third of X and more energetic",
+      "D Become half in number"
+    ],
+    answerIndex: 0,
+  },
+  {
+    question: "A metal of thickness 150 mm has a work function of 2.9 eV. Calculate the longest wavelength of light that can eject an electron from the metal.",
+    options: ["A 430 nm", "B 305 nm", "C 620 nm", "D 400 nm"],
+    answerIndex: 2,
+  },
+  {
+    question: "Given that the decay constant of a radioactive element is 0.055 s⁻¹, its half-life is:",
+    options: ["A 18.18 s", "B 12.6 s", "C 0.055 s", "D 0.00303 s"],
+    answerIndex: 0,
+  },
+  {
+    question: "Which of these statements is false?",
+    options: [
+      "A The laws of reflection are obeyed in diffuse reflection.",
+      "B When the moon passes between the sun and the earth, there is an eclipse of the sun.",
+      "C Images in a convex mirror are erect, virtual, and enlarged.",
+      "D A converging lens is used to correct long-sightedness."
+    ],
+    answerIndex: 2,
+  },
+  {
+    question: "The difference between a solar eclipse and an annular eclipse is that:",
+    options: [
+      "A A solar eclipse is an eclipse of the sun, while an annular eclipse is an eclipse of the moon.",
+      "B In a solar eclipse, the umbra of the moon's shadow is not formed on the earth, while in an annular eclipse, the umbra of the moon's shadow is formed on the earth.",
+      "C In a solar eclipse, the umbra of the moon's shadow is formed on the earth, while in an annular eclipse, the umbra of the moon's shadow is not formed on the earth.",
+      "D In a solar eclipse, the earth experiences only partial darkness, while in an annular eclipse, the earth experiences total darkness."
+    ],
+    answerIndex: 2,
+  },
+  {
+    question: "An object 4 cm high is 30 cm from a concave mirror. The radius of curvature is 10 cm. What is the location and size of the image?",
+    options: [
+      "A 6 cm, -1.1 cm",
+      "B 6 cm, -0.8 cm",
+      "C 6 cm, -8 cm",
+      "D 15 cm, -4 cm"
+    ],
+    answerIndex: 1,
+  },
+    // Add more questions here as needed
+  {
+    question: "A car travels 120 km in 2 hours. What is its average speed in m/s?",
+    options: ["A 16.67 m/s", "B 60 m/s", "C 33.33 m/s", "D 120 m/s"],
+    answerIndex: 0,
+  },
+  {
+    question: "A force of 20 N is applied to a 5 kg mass. What is the acceleration of the mass?",
+    options: ["A 4 m/s²", "B 10 m/s²", "C 25 m/s²", "D 100 m/s²"],
+    answerIndex: 0,
+  },
+  {
+    question: "A ball is thrown vertically upwards with a speed of 15 m/s. How high does it rise? (Take g = 10 m/s²)",
+    options: ["A 7.5 m", "B 11.25 m", "C 15 m", "D 22.5 m"],
+    answerIndex: 1,
+  },
+  {
+    question: "A 2 kg object moves at 4 m/s. What is its kinetic energy?",
+    options: ["A 8 J", "B 16 J", "C 32 J", "D 64 J"],
+    answerIndex: 1,
+  },
+  {
+    question: "A 500 W electric heater is used for 2 hours. How much energy is consumed in kWh?",
+    options: ["A 0.5 kWh", "B 1 kWh", "C 2 kWh", "D 4 kWh"],
+    answerIndex: 1,
+  },
+  {
+    question: "A wave has a frequency of 50 Hz and a wavelength of 2 m. What is its speed?",
+    options: ["A 25 m/s", "B 50 m/s", "C 100 m/s", "D 200 m/s"],
+    answerIndex: 2,
+  },
+  {
+    question: "A 10 Ω resistor carries a current of 2 A. What is the voltage across it?",
+    options: ["A 5 V", "B 10 V", "C 20 V", "D 40 V"],
+    answerIndex: 2,
+  },
+  {
+    question: "A stone is dropped from a height of 45 m. How long does it take to reach the ground? (Take g = 10 m/s²)",
+    options: ["A 2 s", "B 3 s", "C 4 s", "D 5 s"],
+    answerIndex: 1,
+  },
+  {
+    question: "A 1000 kg car accelerates from rest to 20 m/s in 5 s. What is the power developed?",
+    options: ["A 40,000 W", "B 80,000 W", "C 100,000 W", "D 200,000 W"],
+    answerIndex: 1,
+  },
+  {
+    question: "A charge of 4 C passes through a conductor in 2 s. What is the current?",
+    options: ["A 0.5 A", "B 2 A", "C 4 A", "D 8 A"],
+    answerIndex: 1,
+  },
+  {
+    question: "A projectile is launched at 30 m/s at an angle of 30° to the horizontal. What is the horizontal component of its velocity?",
+    options: ["A 15 m/s", "B 26 m/s", "C 30 m/s", "D 60 m/s"],
+    answerIndex: 1,
+  },
+  {
+    question: "A 2 m long wire has a resistance of 8 Ω. What is the resistance of a 4 m long wire of the same material and cross-sectional area?",
+    options: ["A 4 Ω", "B 8 Ω", "C 16 Ω", "D 32 Ω"],
+    answerIndex: 2,
+  },
+  {
+    question: "A body of mass 10 kg is lifted 5 m. What is the potential energy gained? (Take g = 10 m/s²)",
+    options: ["A 250 J", "B 500 J", "C 1000 J", "D 2000 J"],
+    answerIndex: 2,
+  },
+  {
+    question: "A sound wave travels at 340 m/s. If its frequency is 680 Hz, what is its wavelength?",
+    options: ["A 0.25 m", "B 0.5 m", "C 1 m", "D 2 m"],
+    answerIndex: 1,
+  },
+  {
+    question: "A 12 V battery supplies a current of 3 A to a circuit. What is the power delivered?",
+    options: ["A 4 W", "B 12 W", "C 36 W", "D 48 W"],
+    answerIndex: 2,
+  },
+  {
+    question: "A ball of mass 0.2 kg is thrown with a speed of 10 m/s. What is its momentum?",
+    options: ["A 0.5 kg·m/s", "B 1 kg·m/s", "C 2 kg·m/s", "D 5 kg·m/s"],
+    answerIndex: 2,
+  },
+  {
+    question: "A spring with a spring constant of 200 N/m is compressed by 0.1 m. What is the stored potential energy?",
+    options: ["A 1 J", "B 2 J", "C 10 J", "D 20 J"],
+    answerIndex: 1,
+  },
+  {
+    question: "A 2000 kg car travels at 20 m/s. What is the braking force required to stop it in 4 s?",
+    options: ["A 5000 N", "B 10,000 N", "C 15,000 N", "D 20,000 N"],
+    answerIndex: 1,
+  },
+  {
+    question: "A lens has a focal length of 25 cm. What is its power in diopters?",
+    options: ["A 2 D", "B 4 D", "C 6 D", "D 8 D"],
+    answerIndex: 0,
+  },
+  {
+    question: "A 5 kg mass is moving at 3 m/s. What is the work done to bring it to rest?",
+    options: ["A 7.5 J", "B 15 J", "C 22.5 J", "D 30 J"],
+    answerIndex: 2,
+  },
+  {
+    question: "A transformer has 200 primary turns and 50 secondary turns. If the primary voltage is 240 V, what is the secondary voltage?",
+    options: ["A 60 V", "B 120 V", "C 480 V", "D 960 V"],
+    answerIndex: 0,
+  },
+  {
+    question: "A body moves with a constant speed of 10 m/s in a circular path of radius 5 m. What is its centripetal acceleration?",
+    options: ["A 10 m/s²", "B 20 m/s²", "C 50 m/s²", "D 100 m/s²"],
+    answerIndex: 1,
+  },
+  {
+    question: "A 0.5 kg ball falls from a height of 20 m. What is its velocity just before hitting the ground? (Take g = 10 m/s²)",
+    options: ["A 10 m/s", "B 20 m/s", "C 30 m/s", "D 40 m/s"],
+    answerIndex: 1,
+  },
+  {
+    question: "A circuit has three resistors of 2 Ω, 3 Ω, and 6 Ω connected in series. What is the total resistance?",
+    options: ["A 6 Ω", "B 11 Ω", "C 12 Ω", "D 18 Ω"],
+    answerIndex: 1,
+  },
+  {
+    question: "A gas occupies 2 m³ at a pressure of 100 kPa. If the volume is reduced to 1 m³ at constant temperature, what is the new pressure?",
+    options: ["A 50 kPa", "B 100 kPa", "C 200 kPa", "D 400 kPa"],
+    answerIndex: 2,
+  },
+  {
+    question: "A 100 W bulb is used for 5 hours. How much energy is consumed in joules?",
+    options: ["A 1800 J", "B 18,000 J", "C 180,000 J", "D 1,800,000 J"],
+    answerIndex: 3,
+  },
+  {
+    question: "A body of mass 4 kg is accelerated from rest to 10 m/s in 2 s. What is the force applied?",
+    options: ["A 10 N", "B 20 N", "C 30 N", "D 40 N"],
+    answerIndex: 3,
+  },
+  {
+    question: "A convex mirror has a focal length of 20 cm. If an object is placed 40 cm from the mirror, what is the image distance?",
+    options: ["A 10 cm", "B 13.33 cm", "C 20 cm", "D 40 cm"],
+    answerIndex: 1,
+  },
+  {
+    question: "A 0.1 kg object is dropped from rest. After 2 s, what is its kinetic energy? (Take g = 10 m/s²)",
+    options: ["A 10 J", "B 20 J", "C 100 J", "D 200 J"],
+    answerIndex: 1,
+  },
+  {
+    question: "A wire of length 1 m and resistance 5 Ω is stretched to 2 m. What is its new resistance?",
+    options: ["A 5 Ω", "B 10 Ω", "C 20 Ω", "D 40 Ω"],
+    answerIndex: 2,
+  },
+  ];
+
+  const TOTAL_QUESTIONS = 10;
+
+  // State
+  let selectedQuestions = [];
+  let currentQuestionIndex = 0;
+  let score = 0;
+  let answered = false;
+
+  // DOM Elements
+  const questionNumberEl = document.getElementById("question-number");
+  const questionTextEl = document.getElementById("question-text");
+  const optionsListEl = document.getElementById("options-list");
+  const feedbackEl = document.getElementById("feedback");
+  const nextBtn = document.getElementById("next-btn");
+  const scoreBoard = document.getElementById("score-board");
+  const scoreText = document.getElementById("score-text");
+  const correctText = document.getElementById("correct-text");
+  const wrongText = document.getElementById("wrong-text");
+  const resetBtn = document.getElementById("reset-btn");
+  const quizContainer = document.getElementById("quiz-container");
+
+  // Utility to shuffle array (Fisher-Yates)
+  function shuffle(array) {
+    let currentIndex = array.length, randomIndex;
+    while (currentIndex !== 0) {
+      randomIndex = Math.floor(Math.random() * currentIndex);
+      currentIndex--;
+      [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+    }
+    return array;
+  }
+
+  // Pick random questions
+  function pickQuestions() {
+    const allIndexes = [...Array(questionBank.length).keys()];
+    shuffle(allIndexes);
+    return allIndexes.slice(0, TOTAL_QUESTIONS).map(i => questionBank[i]);
+  }
+
+  // Render current question
+  function renderQuestion() {
+    answered = false;
+    nextBtn.disabled = true;
+    feedbackEl.textContent = "";
+    optionsListEl.innerHTML = "";
+
+    const q = selectedQuestions[currentQuestionIndex];
+    questionNumberEl.textContent = `Question ${currentQuestionIndex + 1} of ${TOTAL_QUESTIONS}`;
+    questionTextEl.textContent = q.question;
+
+    q.options.forEach((option, idx) => {
+      const li = document.createElement("li");
+      const btn = document.createElement("button");
+      btn.textContent = option;
+      btn.classList.add("option-btn");
+      btn.setAttribute("data-index", idx);
+      btn.setAttribute("type", "button");
+      btn.addEventListener("click", onAnswerSelected);
+      li.appendChild(btn);
+      optionsListEl.appendChild(li);
+    });
+  }
+
+  // Handle answer selection
+  function onAnswerSelected(e) {
+    if (answered) return; // Prevent multiple answers
+    answered = true;
+    const selectedBtn = e.currentTarget;
+    const selectedIdx = Number(selectedBtn.getAttribute("data-index"));
+    const currentQ = selectedQuestions[currentQuestionIndex];
+    const correctIdx = currentQ.answerIndex;
+
+    // Disable all buttons
+    Array.from(optionsListEl.children).forEach(li => {
+      const btn = li.querySelector("button");
+      btn.disabled = true;
+      if (Number(btn.getAttribute("data-index")) === correctIdx) {
+        btn.classList.add("correct");
+      }
+    });
+
+    if (selectedIdx === correctIdx) {
+      selectedBtn.classList.add("correct");
+      feedbackEl.textContent = "Correct! 🎉";
+      score++;
+    } else {
+      selectedBtn.classList.add("wrong");
+      feedbackEl.textContent = `Wrong! The correct answer is: "${currentQ.options[correctIdx]}".`;
+    }
+
+    nextBtn.disabled = false;
+  }
+
+  // Go to next question or show score
+  function onNext() {
+    currentQuestionIndex++;
+    if (currentQuestionIndex >= TOTAL_QUESTIONS) {
+      showScore();
+    } else {
+      renderQuestion();
+    }
+  }
+
+  // Show score summary
+  function showScore() {
+    quizContainer.style.display = "none";
+    scoreBoard.style.display = "block";
+    scoreText.textContent = `You scored ${score} out of ${TOTAL_QUESTIONS}.`;
+    correctText.textContent = `Correct Answers: ${score}`;
+    wrongText.textContent = `Wrong Answers: ${TOTAL_QUESTIONS - score}`;
+  }
+
+  // Reset quiz
+  function resetQuiz() {
+    selectedQuestions = pickQuestions();
+    currentQuestionIndex = 0;
+    score = 0;
+    quizContainer.style.display = "block";
+    scoreBoard.style.display = "none";
+    renderQuestion();
+  }
+
+  // Init app
+  function init() {
+    resetBtn.addEventListener("click", resetQuiz);
+    nextBtn.addEventListener("click", onNext);
+    resetQuiz();
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
