@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>JAMB CBT App</title>
+<style>
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0; 
+    background: #00C38F;
+    color: #222;
+    display: flex;
+    min-height: 100vh;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  #app {
+    background: #fff;
+    max-width: 600px;
+    width: 100%;
+    border-radius: 8px;
+    box-shadow: 0 0 35px rgba(0,0,0,0.1);
+    padding: 30px 25px;
+    display: flex;
+    flex-direction: column;
+  }
+  h1 {
+    text-align: center;
+    margin-bottom: 15px;
+    color: #004080;
+  }
+  #question-number {
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: #555;
+  }
+  #question-text {
+    font-size: 1.2rem;
+    margin-bottom: 20px;
+  }
+  footer {
+      color: #999;
+      font-size: 0.9rem;
+      text-align: center;
+      margin-top: 10px;
+      padding: 1px;
+    }
+
+  .options {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 20px 0;
+  }
+  .options li {
+    margin-bottom: 10px;
+  }
+  .option-btn {
+    width: 100%;
+    background: #e3e8f0;
+    border: none;
+    border-radius: 6px;
+    padding: 12px 16px;
+    font-size: 1rem;
+    cursor: pointer;
+    text-align: left;
+    transition: background-color 0.3s ease;
+  }
+  .option-btn:hover:not(:disabled) {
+    background-color: #d0daf7;
+  }
+  .option-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.8;
+  }
+  .correct {
+    background-color: #4CAF50 !important;
+    color: #FFFFFF;
+    font-family: Times New Roman;
+  }
+  .wrong {
+    background-color: #f44336 !important;
+    color: white;
+  }
+  #feedback {
+    font-weight: 600;
+    font-size: 1.1rem;
+    margin-bottom: 20px;
+    min-height: 30px;
+  }
+  #next-btn, #reset-btn {
+    background-color: #004080;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 6px;
+    font-size: 1rem;
+    cursor: pointer;
+    width: 100%;
+    max-width: 200px;
+    align-self: center;
+    transition: background-color 0.3s ease;
+  }
+  #next-btn:disabled {
+    background-color: #8b9dc3;
+    cursor: not-allowed;
+  }
+  #next-btn:hover:not(:disabled),
+  #reset-btn:hover {
+    background-color: #003366;
+  }
+  #score-board {
+    text-align: center;
+  }
+  #score-board h2 {
+    margin-bottom: 15px;
+    color: #004080;
+  }
+  #score-board p {
+    font-size: 1.1rem;
+    margin: 5px 0;
+  }
+  @media (max-width: 480px) {
+    #app {
+      padding: 20px 15px;
+    }
+    #question-text {
+      font-size: 1rem;
+    }
+    .option-btn {
+      font-size: 0.9rem;
+      padding: 10px 12px;
+    }
+  }
+</style>
+</head>
+<body>
+<div id="app" role="main" aria-label="JAMB CBT App">
+  <h1>OAU AMPLITUDE TEST</h1>
+  <div id="quiz-container" aria-live="polite">
+    <div id="question-number"></div>
+    <div id="question-text"></div>
+    <ul class="options" role="list" id="options-list"></ul>
+    <div id="feedback" aria-live="assertive"></div>
+    <button id="next-btn" disabled>Next Question</button>
+    <br><b>
+  <footer>
+    © Success Isaac ( Success_Dev )<br>
+    email oyamendasuccess02@gmail.com
+  </footer>
+  </div>
+
+  <div id="score-board" style="display:none;">
+    <h2>Your Score</h2>
+    <p id="score-text"></p>
+    <p id="correct-text"></p>
+    <p id="wrong-text"></p>
+    <button id="reset-btn">Restart Quiz</button>
+  </div>
+</div>
+
+<script>
+(() => {
+  // QUESTION BANK (hidden here - add your own questions)
+  // Format:
+  // {
+  //   question: "Question text",
+  //   options: ["Option A", "Option B", "Option C", "Option D"],
+  //   answerIndex: 1 // zero-based index of correct answer in options array
+  // }
+  const questionBank = [
+    {
+      question: "Which of these is the odd one?",
+      options: ["A Leopard", "B Cougar", "C Elephant", "D Lion"],
+      answerIndex: 2,
+    },
+    {
+      question: "Complete the sequence 1 4 8 9 27 16",
+      options: ["A 24", "B 64", "C 56", "D 18"],
+      answerIndex: 1,
+    },
+    {
+      question: "What is the chemical symbol for water?",
+      options: ["A H2", "B O2", "C H2O", "D CO2"],
+      answerIndex: 2,
+    },
+    {
+      question: "Who was the first President of Nigeria?",
+      options: ["A Olusegun Obasanjo", "B Nnamdi Azikiwe", "C Goodluck Jonathan", "D Muhammadu Buhari"],
+      answerIndex: 1,
+    },
+    {
+      question: "A is two years older than B who is twice as old as C  If the total age is 27 how old is B?",
+      options: ["A 5", "B 10", "C 12", "D 15"],
+      answerIndex: 1,
+    },
+    {
+      question: "What does DNA stand for?",
+      options: ["A Deoxyribonucleic Acid", "B Dynamic Nucleic Acid", "C Deoxynitric Acid", "D Di-nucleotide Acid"],
+      answerIndex: 0,
+    },
+    {
+      question: "Which of these is a neccessary part of ovation?",
+      options: ["A Outburst", "B Applause", "C Bravo", "D Encore"],
+      answerIndex: 1,
+    },
+    {
+      question: "AERIE : Eagle",
+      options: ["A Capital : Goverment", "B Bridge : Architect", "C Unit : Apartment", "D House : person"],
+      answerIndex: 3,
+    },
+{
+  question: "What is the first political party in Nigeria?",
+  options: ["A AG", "B NCNC", "C PDP", "D NNDP"],
+  answerIndex: 3,
+},
+{
+  question: "What is the full meaning of NEEDS?",
+  options: [
+    "A National Economic Education Development Scheme",
+    "B National Empowerment for Economic Development and Strategy",
+    "C National Economic Empowerment and Development Strategy",
+    "D National Economic Evaluation and Data Survey"
+  ],
+  answerIndex: 2,
+},
+{
+  question: "What do ichthyologists study?",
+  options: ["A Birds", "B Insects", "C Amphibians", "D Fish"],
+  answerIndex: 3,
+},
+{
+  question: "An underground layer of porous rock that contains water is called what?",
+  options: ["A Glacier", "B Aquifer", "C Reservoir", "D Spring"],
+  answerIndex: 1,
+},
+{
+  question: "Who started Fascism?",
+  options: ["A Joseph Stalin", "B Benito Mussolini", "C Adolf Hitler", "D Winston Churchill"],
+  answerIndex: 1,
+},
+{
+  question: "In which career are the terms 'defense mechanism' and 'paranoia' used?",
+  options: ["A Law", "B Medicine", "C Psychology", "D Sociology"],
+  answerIndex: 2,
+},
+{
+  question: "Who started Nazism?",
+  options: ["A Vladimir Lenin", "B Joseph Stalin", "C Adolf Hitler", "D Benito Mussolini"],
+  answerIndex: 2,
+},
+{
+  question: "How many tentacles does an octopus have?",
+  options: ["A 6", "B 8", "C 10", "D 12"],
+  answerIndex: 1,
+},
+{
+  question: "The only city in the world to lie between two continents is?",
+  options: ["A Istanbul", "B Moscow", "C Cairo", "D Ankara"],
+  answerIndex: 0,
+},
+{
+  question: "What city is oldest in the world?",
+  options: ["A Jerusalem", "B Babylon", "C Damascus", "D Athens"],
+  answerIndex: 2,
+},
+{
+  question: "What is a group of lions called?",
+  options: ["A Pack", "B Troop", "C Pride", "D Herd"],
+  answerIndex: 2,
+},
+{
+  question: "Spell the word 'LIAISON'",
+  options: ["A LIAZON", "B LIAISON", "C LIAISSON", "D LAYISON"],
+  answerIndex: 1,
+},
+{
+  question: "Why did the Nigerian Civil War end?",
+  options: ["A 1967", "B 1966", "C 1970", "D 1980"],
+  answerIndex: 2,
+},
+{
+  question: "Who was the first executive President of Nigeria?",
+  options: ["A Nnamdi Azikiwe", "B Olusegun Obasanjo", "C Shehu Shagari", "D Tafawa Balewa"],
+  answerIndex: 2,
+},
+{
+  question: "Who was the first human to set foot on the moon?",
+  options: ["A Buzz Aldrin", "B Neil Armstrong", "C Yuri Gagarin", "D Michael Collins"],
+  answerIndex: 1,
+},
+    {
+      question: "What is 15% of 200?",
+      options: ["A 20", "B 25", "C 30", "D 35"],
+      answerIndex: 2,
+    },
+    {
+      question: "How many countries are in africa?",
+      options: ["A 52", "B 53", "C 54", "D 55"],
+      answerIndex: 2,
+    },
+    // Add more questions here as needed
+    {
+      question: "The driest place in the world is?",
+      options: ["A Atacama desert", "B Sahara desert", "C Sudan desert", "D Death valley"],
+      answerIndex: 0,
+    },
+    {
+      question: "When was Obafemi Awolowo University established?",
+      options: ["A 1961", "B 1962", "C 1963", "D 1964"],
+      answerIndex: 0,
+    },
+    {
+      question: "How many countries are in africa?",
+      options: ["A 52", "B 53", "C 54", "D 55"],
+      answerIndex: 2,
+    },
+   {
+      question: "The only uncolonized country in africa is?",
+      options: ["A Uganda", "B Ethiopa", "C Ghana", "D Liberia"],
+      answerIndex: 1,
+    },
+    {
+      question: "He ________ remembers putting his car keys on that shelf",
+      options: ["A Deeply", "B Clearly", "C Entirely", "D Strongly"],
+      answerIndex: 1,
+    },
+    {
+      question: "What is 15% of 200?",
+      options: ["A 20", "B 25", "C 30", "D 35"],
+      answerIndex: 2,
+    },
+    {
+      question: "How many countries are in africa?",
+      options: ["A 52", "B 53", "C 54", "D 55"],
+      answerIndex: 2,
+    },
+    {
+  question: "Which word does not belong to the group?",
+  options: ["A Enduring", "B Evanescent", "C Transient", "D Ephemeral"],
+  answerIndex: 0,
+},
+{
+  question: "Identify the odd one out:",
+  options: ["A Discord", "B Melody", "C Cacophony", "D Dissonance"],
+  answerIndex: 1,
+},
+{
+  question: "Which word is the odd one out?",
+  options: ["A Coherent", "B Ambiguous", "C Perspicuous", "D Lucid"],
+  answerIndex: 1,
+},
+{
+  question: "Find the odd man out:",
+  options: ["A Avarice", "B Magnanimity", "C Altruism", "D Benevolence"],
+  answerIndex: 0,
+},
+{
+  question: "Which is the odd one out?",
+  options: ["A Idealistic", "B Quixotic", "C Pragmatic", "D Utopian"],
+  answerIndex: 2,
+},
+{
+  question: "Choose the word closest in meaning to 'Obstreperous':",
+  options: ["A Serene", "B Subtle", "C Boisterous", "D Compliant"],
+  answerIndex: 2,
+},
+{
+  question: "What is a synonym for 'Perspicacity'?",
+  options: ["A Ignorance", "B Lethargy", "C Acumen", "D Obtuseness"],
+  answerIndex: 2,
+},
+{
+  question: "Select the word that means the same as 'Proclivity':",
+  options: ["A Restraint", "B Indifference", "C Aversion", "D Predilection"],
+  answerIndex: 3,
+},
+{
+  question: "Which word is a synonym for 'Nefarious'?",
+  options: ["A Laudable", "B Virtuous", "C Heinous", "D Benevolent"],
+  answerIndex: 2,
+},
+{
+  question: "Find the synonym for 'Temerity':",
+  options: ["A Prudence", "B Audacity", "C Caution", "D Timidity"],
+  answerIndex: 1,
+},
+{
+  question: "What is the opposite of 'Profligate'?",
+  options: ["A Wasteful", "B Reckless", "C Frugal", "D Extravagant"],
+  answerIndex: 2,
+},
+{
+  question: "Choose the antonym for 'Ebullient':",
+  options: ["A Vibrant", "B Subdued", "C Exuberant", "D Enthusiastic"],
+  answerIndex: 1,
+},
+{
+  question: "Which word is the opposite of 'Fastidious'?",
+  options: ["A Diligent", "B Precise", "C Careless", "D Meticulous"],
+  answerIndex: 2,
+},
+{
+  question: "Select the antonym for 'Obfuscate':",
+  options: ["A Mystify", "B Conceal", "C Clarify", "D Confuse"],
+  answerIndex: 2,
+},
+{
+  question: "What is the opposite of 'Sanguine'?",
+  options: ["A Cheerful", "B Pessimistic", "C Hopeful", "D Optimistic"],
+  answerIndex: 1,
+},
+{
+  question: "Abate : Intensify :: Mitigate : ?",
+  options: ["A Pacify", "B Alleviate", "C Amplify", "D Soothe"],
+  answerIndex: 2,
+},
+{
+  question: "Eloquent : Speech :: Virtuoso : ?",
+  options: ["A Logic", "B Writing", "C Music", "D Painting"],
+  answerIndex: 2,
+},
+{
+  question: "Desks : Classroom :: Utensils : ?",
+  options: ["A Garage", "B Library", "C Bedroom", "D Kitchen"],
+  answerIndex: 3,
+},
+{
+  question: "Ostracize : Include :: Castigate : ?",
+  options: ["A Condemn", "B Praise", "C Punish", "D Criticize"],
+  answerIndex: 1,
+},
+{
+  question: "Symphony : Music :: Tapestry : ?",
+  options: ["A Literature", "B Sculpture", "C Fabric", "D Painting"],
+  answerIndex: 2,
+},
+  ];
+
+  const TOTAL_QUESTIONS = 10;
+
+  // State
+  let selectedQuestions = [];
+  let currentQuestionIndex = 0;
+  let score = 0;
+  let answered = false;
+
+  // DOM Elements
+  const questionNumberEl = document.getElementById("question-number");
+  const questionTextEl = document.getElementById("question-text");
+  const optionsListEl = document.getElementById("options-list");
+  const feedbackEl = document.getElementById("feedback");
+  const nextBtn = document.getElementById("next-btn");
+  const scoreBoard = document.getElementById("score-board");
+  const scoreText = document.getElementById("score-text");
+  const correctText = document.getElementById("correct-text");
+  const wrongText = document.getElementById("wrong-text");
+  const resetBtn = document.getElementById("reset-btn");
+  const quizContainer = document.getElementById("quiz-container");
+
+  // Utility to shuffle array (Fisher-Yates)
+  function shuffle(array) {
+    let currentIndex = array.length, randomIndex;
+    while (currentIndex !== 0) {
+      randomIndex = Math.floor(Math.random() * currentIndex);
+      currentIndex--;
+      [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+    }
+    return array;
+  }
+
+  // Pick random questions
+  function pickQuestions() {
+    const allIndexes = [...Array(questionBank.length).keys()];
+    shuffle(allIndexes);
+    return allIndexes.slice(0, TOTAL_QUESTIONS).map(i => questionBank[i]);
+  }
+
+  // Render current question
+  function renderQuestion() {
+    answered = false;
+    nextBtn.disabled = true;
+    feedbackEl.textContent = "";
+    optionsListEl.innerHTML = "";
+
+    const q = selectedQuestions[currentQuestionIndex];
+    questionNumberEl.textContent = `Question ${currentQuestionIndex + 1} of ${TOTAL_QUESTIONS}`;
+    questionTextEl.textContent = q.question;
+
+    q.options.forEach((option, idx) => {
+      const li = document.createElement("li");
+      const btn = document.createElement("button");
+      btn.textContent = option;
+      btn.classList.add("option-btn");
+      btn.setAttribute("data-index", idx);
+      btn.setAttribute("type", "button");
+      btn.addEventListener("click", onAnswerSelected);
+      li.appendChild(btn);
+      optionsListEl.appendChild(li);
+    });
+  }
+
+  // Handle answer selection
+  function onAnswerSelected(e) {
+    if (answered) return; // Prevent multiple answers
+    answered = true;
+    const selectedBtn = e.currentTarget;
+    const selectedIdx = Number(selectedBtn.getAttribute("data-index"));
+    const currentQ = selectedQuestions[currentQuestionIndex];
+    const correctIdx = currentQ.answerIndex;
+
+    // Disable all buttons
+    Array.from(optionsListEl.children).forEach(li => {
+      const btn = li.querySelector("button");
+      btn.disabled = true;
+      if (Number(btn.getAttribute("data-index")) === correctIdx) {
+        btn.classList.add("correct");
+      }
+    });
+
+    if (selectedIdx === correctIdx) {
+      selectedBtn.classList.add("correct");
+      feedbackEl.textContent = "Correct! 🎉";
+      score++;
+    } else {
+      selectedBtn.classList.add("wrong");
+      feedbackEl.textContent = `Wrong! The correct answer is: "${currentQ.options[correctIdx]}".`;
+    }
+
+    nextBtn.disabled = false;
+  }
+
+  // Go to next question or show score
+  function onNext() {
+    currentQuestionIndex++;
+    if (currentQuestionIndex >= TOTAL_QUESTIONS) {
+      showScore();
+    } else {
+      renderQuestion();
+    }
+  }
+
+  // Show score summary
+  function showScore() {
+    quizContainer.style.display = "none";
+    scoreBoard.style.display = "block";
+    scoreText.textContent = `You scored ${score} out of ${TOTAL_QUESTIONS}.`;
+    correctText.textContent = `Correct Answers: ${score}`;
+    wrongText.textContent = `Wrong Answers: ${TOTAL_QUESTIONS - score}`;
+  }
+
+  // Reset quiz
+  function resetQuiz() {
+    selectedQuestions = pickQuestions();
+    currentQuestionIndex = 0;
+    score = 0;
+    quizContainer.style.display = "block";
+    scoreBoard.style.display = "none";
+    renderQuestion();
+  }
+
+  // Init app
+  function init() {
+    resetBtn.addEventListener("click", resetQuiz);
+    nextBtn.addEventListener("click", onNext);
+    resetQuiz();
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
