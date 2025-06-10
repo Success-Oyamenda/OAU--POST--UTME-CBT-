@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>JAMB CBT App</title>
+<style>
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0; 
+    background: #2196F3;
+    color: #222;
+    display: flex;
+    min-height: 100vh;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  #app {
+    background: #fff;
+    max-width: 600px;
+    width: 100%;
+    border-radius: 8px;
+    box-shadow: 0 0 35px rgba(0,0,0,0.1);
+    padding: 30px 25px;
+    display: flex;
+    flex-direction: column;
+  }
+  h1 {
+    text-align: center;
+    margin-bottom: 15px;
+    color: #004080;
+  }
+  #question-number {
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: #555;
+  }
+  #question-text {
+    font-size: 1.2rem;
+    margin-bottom: 20px;
+  }
+  footer {
+      color: #999;
+      font-size: 0.9rem;
+      text-align: center;
+      margin-top: 10px;
+      padding: 1px;
+    }
+
+  .options {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 20px 0;
+  }
+  .options li {
+    margin-bottom: 10px;
+  }
+  .option-btn {
+    width: 100%;
+    background: #e3e8f0;
+    border: none;
+    border-radius: 6px;
+    padding: 12px 16px;
+    font-size: 1rem;
+    cursor: pointer;
+    text-align: left;
+    transition: background-color 0.3s ease;
+  }
+  .option-btn:hover:not(:disabled) {
+    background-color: #d0daf7;
+  }
+  .option-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.8;
+  }
+  .correct {
+    background-color: #4CAF50 !important;
+    color: #FFFFFF;
+    font-family: Times New Roman;
+  }
+  .wrong {
+    background-color: #f44336 !important;
+    color: white;
+  }
+  #feedback {
+    font-weight: 600;
+    font-size: 1.1rem;
+    margin-bottom: 20px;
+    min-height: 30px;
+  }
+  #next-btn, #reset-btn {
+    background-color: #004080;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 6px;
+    font-size: 1rem;
+    cursor: pointer;
+    width: 100%;
+    max-width: 200px;
+    align-self: center;
+    transition: background-color 0.3s ease;
+  }
+  #next-btn:disabled {
+    background-color: #8b9dc3;
+    cursor: not-allowed;
+  }
+  #next-btn:hover:not(:disabled),
+  #reset-btn:hover {
+    background-color: #003366;
+  }
+  #score-board {
+    text-align: center;
+  }
+  #score-board h2 {
+    margin-bottom: 15px;
+    color: #004080;
+  }
+  #score-board p {
+    font-size: 1.1rem;
+    margin: 5px 0;
+  }
+  @media (max-width: 480px) {
+    #app {
+      padding: 20px 15px;
+    }
+    #question-text {
+      font-size: 1rem;
+    }
+    .option-btn {
+      font-size: 0.9rem;
+      padding: 10px 12px;
+    }
+  }
+</style>
+</head>
+<body>
+<div id="app" role="main" aria-label="JAMB CBT App">
+  <h1>OAU MATHEMATICS TEST</h1>
+  <div id="quiz-container" aria-live="polite">
+    <div id="question-number"></div>
+    <div id="question-text"></div>
+    <ul class="options" role="list" id="options-list"></ul>
+    <div id="feedback" aria-live="assertive"></div>
+    <button id="next-btn" disabled>Next Question</button>
+    <br><b>
+  <footer>
+    © Success Isaac ( Success_Dev )<br>
+    email oyamendasuccess02@gmail.com
+  </footer>
+  </div>
+
+  <div id="score-board" style="display:none;">
+    <h2>Your Score</h2>
+    <p id="score-text"></p>
+    <p id="correct-text"></p>
+    <p id="wrong-text"></p>
+    <button id="reset-btn">Restart Quiz</button>
+  </div>
+</div>
+
+<script>
+(() => {
+  // QUESTION BANK (hidden here - add your own questions)
+  // Format:
+  // {
+  //   question: "Question text",
+  //   options: ["Option A", "Option B", "Option C", "Option D"],
+  //   answerIndex: 1 // zero-based index of correct answer in options array
+  // }
+  const questionBank = [
+{
+question: "Find the value of x in the equation x² + 4x - 5 = 0.",
+options: ["A) 1 or -5", "B) -1 or 5", "C) 2 or -3", "D) -2 or 3"],
+answerIndex: 0,
+},
+{
+question: "If the radius of a circle is 7cm, find its circumference.",
+options: ["A) 14π", "B) 28π", "C) 44", "D) 88"],
+answerIndex: 1,
+},
+{
+question: "A bag contains 5 white balls and 3 black balls. If 2 balls are drawn randomly, find the probability that both are white.",
+options: ["A) 5/14", "B) 5/16", "C) 10/28", "D) 5/8"],
+answerIndex: 0,
+},
+{
+question: "Find the equation of the line perpendicular to y = 2x + 1.",
+options: ["A) y = -1/2x + 1", "B) y = 1/2x - 1", "C) y = -2x + 1", "D) y = 2x - 1"],
+answerIndex: 0,
+},
+{
+question: "If sin(A) = 1/2, find cos(A).",
+options: ["A) √3/2", "B) 1/√3", "C) √2/2", "D) 1/2"],
+answerIndex: 0,
+},
+{
+question: "Find the sum of the interior angles of a hexagon.",
+options: ["A) 360°", "B) 540°", "C) 720°", "D) 900°"],
+answerIndex: 2,
+},
+{
+question: "If log(x) = 2, find x.",
+options: ["A) 10", "B) 100", "C) 1000", "D) 10000"],
+answerIndex: 1,
+},
+{
+question: "A car travels 150km in 3 hours. Find its average speed.",
+options: ["A) 40km/h", "B) 50km/h", "C) 60km/h", "D) 70km/h"],
+answerIndex: 1,
+},
+{
+question: "Find the derivative of f(x) = x³.",
+options: ["A) 2x²", "B) 3x²", "C) x²", "D) 3x"],
+answerIndex: 1,
+},
+{
+question: "If the mean of 10 numbers is 20, find their sum.",
+options: ["A) 100", "B) 150", "C) 200", "D) 250"],
+answerIndex: 2,
+},
+{
+question: "Solve the inequality x - 2 > 3.",
+options: ["A) x > 5", "B) x < 5", "C) x > 1", "D) x < 1"],
+answerIndex: 0,
+},
+{
+question: "Find the area of a rectangle with length 8cm and width 5cm.",
+options: ["A) 20cm²", "B) 30cm²", "C) 40cm²", "D) 50cm²"],
+answerIndex: 2,
+},
+{
+question: "If the probability of an event is 0.4, find the probability of its complement.",
+options: ["A) 0.4", "B) 0.5", "C) 0.6", "D) 0.7"],
+answerIndex: 2,
+},
+{
+question: "Find the value of x in the equation 3x + 2 = 14.",
+options: ["A) 3", "B) 4", "C) 5", "D) 6"],
+answerIndex: 1,
+},
+{
+question: "If the 3rd term of an AP is 7 and the common difference is 2, find the first term.",
+options: ["A) 3", "B) 5", "C) 7", "D) 9"],
+answerIndex: 0,
+},
+{
+question: "If the 5th term of an AP is 15 and the 10th term is 30, find the common difference.",
+options: ["A) 2", "B) 3", "C) 4", "D) 5"],
+answerIndex: 1,
+},
+{
+question: "Find the equation of the line passing through points (2, 3) and (4, 5).",
+options: ["A) y = x + 1", "B) y = x - 1", "C) y = 2x - 1", "D) y = x"],
+answerIndex: 0,
+},
+{
+question: "If sin θ = 3/5, find cos θ.",
+options: ["A) 4/5", "B) 3/4", "C) 4/3", "D) 5/4"],
+answerIndex: 0,
+},
+{
+question: "A box contains 5 red balls and 3 green balls. If 2 balls are drawn randomly, find the probability that both are red.",
+options: ["A) 5/14", "B) 5/16", "C) 3/8", "D) 2/7"],
+answerIndex: 0,
+},
+{
+question: "Find the derivative of the function f(x) = 3x² + 2x - 5.",
+options: ["A) 6x + 2", "B) 6x - 2", "C) 3x + 2", "D) 6x"],
+answerIndex: 0,
+},
+{
+question: "If the mean of 5 numbers is 20, find the sum of the numbers.",
+options: ["A) 80", "B) 90", "C) 100", "D) 110"],
+answerIndex: 2,
+},
+{
+question: "Solve the inequality 2x + 5 > 11.",
+options: ["A) x > 2", "B) x > 3", "C) x < 2", "D) x < 3"],
+answerIndex: 1,
+},
+{
+question: "Find the area of a triangle with vertices (0, 0), (3, 0), and (0, 4).",
+options: ["A) 6", "B) 8", "C) 10", "D) 12"],
+answerIndex: 0,
+},
+{
+question: "If log₂x = 3, find x.",
+options: ["A) 6", "B) 8", "C) 10", "D) 12"],
+answerIndex: 1,
+},
+{
+question: "A car travels 200 km in 4 hours. Find its average speed.",
+options: ["A) 40 km/h", "B) 50 km/h", "C) 60 km/h", "D) 70 km/h"],
+answerIndex: 1,
+},
+{
+question: "Find the sum of the first 5 terms of the GP 2, 6, 18, ...",
+options: ["A) 120", "B) 122", "C) 242", "D) 364"],
+answerIndex: 2,
+},
+{
+question: "If the probability of an event is 0.7, find the probability of its complement.",
+options: ["A) 0.1", "B) 0.2", "C) 0.3", "D) 0.4"],
+answerIndex: 2,
+},
+{
+question: "Find the equation of the tangent to the curve y = x² at the point (2, 4).",
+options: ["A) y = 4x - 4", "B) y = 4x + 4", "C) y = 2x + 4", "D) y = 2x - 4"],
+answerIndex: 0,
+},
+{
+question: "If the matrix A = [[1, 2], [3, 4]], find the determinant of A.",
+options: ["A) -2", "B) 2", "C) 10", "D) -10"],
+answerIndex: 0,
+},
+ ];
+
+  const TOTAL_QUESTIONS = 10;
+
+  // State
+  let selectedQuestions = [];
+  let currentQuestionIndex = 0;
+  let score = 0;
+  let answered = false;
+
+  // DOM Elements
+  const questionNumberEl = document.getElementById("question-number");
+  const questionTextEl = document.getElementById("question-text");
+  const optionsListEl = document.getElementById("options-list");
+  const feedbackEl = document.getElementById("feedback");
+  const nextBtn = document.getElementById("next-btn");
+  const scoreBoard = document.getElementById("score-board");
+  const scoreText = document.getElementById("score-text");
+  const correctText = document.getElementById("correct-text");
+  const wrongText = document.getElementById("wrong-text");
+  const resetBtn = document.getElementById("reset-btn");
+  const quizContainer = document.getElementById("quiz-container");
+
+  // Utility to shuffle array (Fisher-Yates)
+  function shuffle(array) {
+    let currentIndex = array.length, randomIndex;
+    while (currentIndex !== 0) {
+      randomIndex = Math.floor(Math.random() * currentIndex);
+      currentIndex--;
+      [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+    }
+    return array;
+  }
+
+  // Pick random questions
+  function pickQuestions() {
+    const allIndexes = [...Array(questionBank.length).keys()];
+    shuffle(allIndexes);
+    return allIndexes.slice(0, TOTAL_QUESTIONS).map(i => questionBank[i]);
+  }
+
+  // Render current question
+  function renderQuestion() {
+    answered = false;
+    nextBtn.disabled = true;
+    feedbackEl.textContent = "";
+    optionsListEl.innerHTML = "";
+
+    const q = selectedQuestions[currentQuestionIndex];
+    questionNumberEl.textContent = `Question ${currentQuestionIndex + 1} of ${TOTAL_QUESTIONS}`;
+    questionTextEl.textContent = q.question;
+
+    q.options.forEach((option, idx) => {
+      const li = document.createElement("li");
+      const btn = document.createElement("button");
+      btn.textContent = option;
+      btn.classList.add("option-btn");
+      btn.setAttribute("data-index", idx);
+      btn.setAttribute("type", "button");
+      btn.addEventListener("click", onAnswerSelected);
+      li.appendChild(btn);
+      optionsListEl.appendChild(li);
+    });
+  }
+
+  // Handle answer selection
+  function onAnswerSelected(e) {
+    if (answered) return; // Prevent multiple answers
+    answered = true;
+    const selectedBtn = e.currentTarget;
+    const selectedIdx = Number(selectedBtn.getAttribute("data-index"));
+    const currentQ = selectedQuestions[currentQuestionIndex];
+    const correctIdx = currentQ.answerIndex;
+
+    // Disable all buttons
+    Array.from(optionsListEl.children).forEach(li => {
+      const btn = li.querySelector("button");
+      btn.disabled = true;
+      if (Number(btn.getAttribute("data-index")) === correctIdx) {
+        btn.classList.add("correct");
+      }
+    });
+
+    if (selectedIdx === correctIdx) {
+      selectedBtn.classList.add("correct");
+      feedbackEl.textContent = "Correct! 🎉";
+      score++;
+    } else {
+      selectedBtn.classList.add("wrong");
+      feedbackEl.textContent = `Wrong! The correct answer is: "${currentQ.options[correctIdx]}".`;
+    }
+
+    nextBtn.disabled = false;
+  }
+
+  // Go to next question or show score
+  function onNext() {
+    currentQuestionIndex++;
+    if (currentQuestionIndex >= TOTAL_QUESTIONS) {
+      showScore();
+    } else {
+      renderQuestion();
+    }
+  }
+
+  // Show score summary
+  function showScore() {
+    quizContainer.style.display = "none";
+    scoreBoard.style.display = "block";
+    scoreText.textContent = `You scored ${score} out of ${TOTAL_QUESTIONS}.`;
+    correctText.textContent = `Correct Answers: ${score}`;
+    wrongText.textContent = `Wrong Answers: ${TOTAL_QUESTIONS - score}`;
+  }
+
+  // Reset quiz
+  function resetQuiz() {
+    selectedQuestions = pickQuestions();
+    currentQuestionIndex = 0;
+    score = 0;
+    quizContainer.style.display = "block";
+    scoreBoard.style.display = "none";
+    renderQuestion();
+  }
+
+  // Init app
+  function init() {
+    resetBtn.addEventListener("click", resetQuiz);
+    nextBtn.addEventListener("click", onNext);
+    resetQuiz();
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
