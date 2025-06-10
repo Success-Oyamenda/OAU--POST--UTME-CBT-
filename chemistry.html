@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>JAMB CBT App</title>
+<style>
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0; 
+    background: #6E0004;
+    color: #222;
+    display: flex;
+    min-height: 100vh;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  #app {
+    background: #fff;
+    max-width: 600px;
+    width: 100%;
+    border-radius: 8px;
+    box-shadow: 0 0 35px rgba(0,0,0,0.1);
+    padding: 30px 25px;
+    display: flex;
+    flex-direction: column;
+  }
+  h1 {
+    text-align: center;
+    margin-bottom: 15px;
+    color: #004080;
+  }
+  #question-number {
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: #555;
+  }
+  #question-text {
+    font-size: 1.2rem;
+    margin-bottom: 20px;
+  }
+  footer {
+      color: #999;
+      font-size: 0.9rem;
+      text-align: center;
+      margin-top: 10px;
+      padding: 1px;
+    }
+
+  .options {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 20px 0;
+  }
+  .options li {
+    margin-bottom: 10px;
+  }
+  .option-btn {
+    width: 100%;
+    background: #e3e8f0;
+    border: none;
+    border-radius: 6px;
+    padding: 12px 16px;
+    font-size: 1rem;
+    cursor: pointer;
+    text-align: left;
+    transition: background-color 0.3s ease;
+  }
+  .option-btn:hover:not(:disabled) {
+    background-color: #d0daf7;
+  }
+  .option-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.8;
+  }
+  .correct {
+    background-color: #4CAF50 !important;
+    color: #FFFFFF;
+    font-family: Times New Roman;
+  }
+  .wrong {
+    background-color: #f44336 !important;
+    color: white;
+  }
+  #feedback {
+    font-weight: 600;
+    font-size: 1.1rem;
+    margin-bottom: 20px;
+    min-height: 30px;
+  }
+  #next-btn, #reset-btn {
+    background-color: #004080;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 6px;
+    font-size: 1rem;
+    cursor: pointer;
+    width: 100%;
+    max-width: 200px;
+    align-self: center;
+    transition: background-color 0.3s ease;
+  }
+  #next-btn:disabled {
+    background-color: #8b9dc3;
+    cursor: not-allowed;
+  }
+  #next-btn:hover:not(:disabled),
+  #reset-btn:hover {
+    background-color: #003366;
+  }
+  #score-board {
+    text-align: center;
+  }
+  #score-board h2 {
+    margin-bottom: 15px;
+    color: #004080;
+  }
+  #score-board p {
+    font-size: 1.1rem;
+    margin: 5px 0;
+  }
+  @media (max-width: 480px) {
+    #app {
+      padding: 20px 15px;
+    }
+    #question-text {
+      font-size: 1rem;
+    }
+    .option-btn {
+      font-size: 0.9rem;
+      padding: 10px 12px;
+    }
+  }
+</style>
+</head>
+<body>
+<div id="app" role="main" aria-label="JAMB CBT App">
+  <h1>OAU CHEMISTRY TEST</h1>
+  <div id="quiz-container" aria-live="polite">
+    <div id="question-number"></div>
+    <div id="question-text"></div>
+    <ul class="options" role="list" id="options-list"></ul>
+    <div id="feedback" aria-live="assertive"></div>
+    <button id="next-btn" disabled>Next Question</button>
+    <br><b>
+  <footer>
+    © Success Isaac ( Success_Dev )<br>
+    email oyamendasuccess02@gmail.com
+  </footer>
+  </div>
+
+  <div id="score-board" style="display:none;">
+    <h2>Your Score</h2>
+    <p id="score-text"></p>
+    <p id="correct-text"></p>
+    <p id="wrong-text"></p>
+    <button id="reset-btn">Restart Quiz</button>
+  </div>
+</div>
+
+<script>
+(() => {
+  // QUESTION BANK (hidden here - add your own questions)
+  // Format:
+  // {
+  //   question: "Question text",
+  //   options: ["Option A", "Option B", "Option C", "Option D"],
+  //   answerIndex: 1 // zero-based index of correct answer in options array
+  // }
+  const questionBank = [
+  {question: "What is the partial pressure of helium in a mixture of nitrogen, oxygen, and helium containing 0.25, 0.15, and 0.4 mole of these gases respectively, if the pressure contribution due to oxygen was 2.5 atm?",
+options: ["A) 1.25 atm", "B) 2.5 atm", "C) 5.0 atm", "D) 6.67 atm"],
+answerIndex: 3,
+},
+{
+question: "Calculate the number of moles of oxygen in 32g of oxygen gas.",
+options: ["A) 1 mole", "B) 2 moles", "C) 3 moles", "D) 4 moles"],
+answerIndex: 0,
+},
+{
+question: "Elements P has an atomic number of 12 while element Q has an atomic number 15. Combination of P and Q gave a compound P_{m}Q_{n}. The respective values of m and n are?",
+options: ["A) m=1, n=2", "B) m=2, n=1", "C) m=3, n=2", "D) m=2, n=3"],
+answerIndex: 3,
+},
+{
+question: "What is the oxidation state of chromium in K2Cr2O7?",
+options: ["A) +3", "B) +6", "C) +2", "D) +5"],
+answerIndex: 1,
+},
+{
+question: "The isomer of a compound C_{5}H_{10} which does NOT decolorize bromine water is?",
+options: ["A) Pent-1-ene", "B) Pent-2-ene", "C) 2-Methylbut-1-ene", "D) Cyclopentane"],
+answerIndex: 3,
+},
+{
+question: "An organic compound with the molecular formula C4H8O has the isomers (i) butanal (ii) cyclobutanol (iii) cyclobutanone (iv) 2-methylpropanal. Which of the following options is correct?",
+options: ["A) (i) and (ii)", "B) (i), (ii), and (iv)", "C) (i), (ii), and (iii)", "D) (ii) and (iv)"],
+answerIndex: 1,
+},
+{
+question: "Calculate the pH of a 0.01M HCl solution.",
+options: ["A) 1", "B) 2", "C) 3", "D) 4"],
+answerIndex: 1,
+},
+{
+question: "Which of the following elements is a noble gas?",
+options: ["A) Sodium", "B) Neon", "C) Oxygen", "D) Nitrogen"],
+answerIndex: 1,
+},
+{
+question: "What is the oxidation state of manganese in KMnO4?",
+options: ["A) +2", "B) +4", "C) +6", "D) +7"],
+answerIndex: 3,
+},
+{
+question: "What is the IUPAC name of the compound CH3CH2CH2OH?",
+options: ["A) Propan-1-ol", "B) Propan-2-ol", "C) Butan-1-ol", "D) Butan-2-ol"],
+answerIndex: 0,
+},
+{
+question: "Which of the following compounds is an alkene?",
+options: ["A) C2H6", "B) C2H4", "C) C2H2", "D) CH4"],
+answerIndex: 1,
+},
+{
+question: "Which of the following compounds is the most ionic?",
+options: ["A) Sodium chloride", "B) Caesium fluoride", "C) Potassium iodide", "D) Lithium bromide"],
+answerIndex: 1,
+},
+{
+question: "Consider the following orderings: (i) Al < Si < P < S (ii) Be < Mg < Ca < Sr (iii) I < Br < Cl < F Which of these give(s) the correct trend in atomic radii?",
+options: ["A) (iii) only", "B) (ii) only", "C) (i) and (ii) only", "D) (i) only"],
+answerIndex: 1,
+},
+{
+question: "What are the respective patterns of hybridization of the central atom in the compounds: CH₄, CO₂, NH₃, and BF₃?",
+options: ["A) sp³, sp, sp³, sp³", "B) sp³, sp, sp³, sp²", "C) sp³, sp, sp², sp²", "D) sp³, sp, sp, sp"],
+answerIndex: 1,
+},
+{
+question: "Boron has two isotopes. If the isotope with mass 10.013 amu has a 19.78% abundance, determine the atomic weight of boron given that the other isotope has a mass of 11.009 amu.",
+options: ["A) 10.81 amu", "B) 9.71 amu", "C) 18.01 amu", "D) 10.09 amu"],
+answerIndex: 0,
+},
+{
+question: "Deuterium bombardment of ²³²U gives ²³³Np and:",
+options: ["A) An electron", "B) Two neutrons", "C) Two protons", "D) Beta particle"],
+answerIndex: 1,
+},
+{
+question: "The following steps are required for the separation of a mixture comprising barium tetraoxosulphate (VI), iodine, and sodium chloride. What is the correct order of the steps?",
+options: ["A) (i), (ii), (iii), and (iv)", "B) (i), (ii), (iii), and (iv)", "C) (iii), (i), (ii), and (iv)", "D) (i), (ii), (iii), and (iv)"],
+answerIndex: 2,
+},
+{
+question: "What is the density of oxygen gas at 2°C and 0.850 atm?",
+options: ["A) 5.5 × 10⁻² g/mL", "B) 2.5 × 10³ g/mL", "C) 1.1 × 10³ g/mL", "D) 1.1 × 10⁻³ g/mL"],
+answerIndex: 3,
+},
+{
+question: "If a gas is compressed to one-third of its original volume and its temperature is doubled, the final pressure for the gas is how many times the original?",
+options: ["A) 6", "B) 3", "C) 2", "D) 1/3"],
+answerIndex: 0,
+},
+{
+question: "Which of the following statements are correct?",
+options: ["A) (i), (iii), (iv)", "B) (i) and (v)", "C) (i), (ii), (iii), and (iv)", "D) (i), (ii), and (iii)"],
+answerIndex: 3,
+},
+{
+question: "Common separation techniques of mixtures are based on principles such as:",
+options: ["A) (iii) and (v)", "B) (ii) and (vi)", "C) (iii), (iv), and (v)", "D) (i) and (ii)"],
+answerIndex: 1,
+},
+{
+question: "A trioxonitrate (V) salt of iron contains 23.14% iron by mass. What is the formula of the salt?",
+options: ["A) FeNO₃", "B) Fe(NO₃)₂", "C) Fe(NO₃)₄", "D) Fe(NO₃)₃"],
+answerIndex: 3,
+},
+{
+question: "What is the difference between a strong acid and a weak acid?",
+options: ["A) Strong acid is fully ionized, weak acid is partially ionized", "B) Strong acid is partially ionized, weak acid is fully ionized", "C) Strong acid has higher pH, weak acid has lower pH", "D) Strong acid has lower pH, weak acid has higher pH"],
+answerIndex: 0,
+},  ];
+
+  const TOTAL_QUESTIONS = 10;
+
+  // State
+  let selectedQuestions = [];
+  let currentQuestionIndex = 0;
+  let score = 0;
+  let answered = false;
+
+  // DOM Elements
+  const questionNumberEl = document.getElementById("question-number");
+  const questionTextEl = document.getElementById("question-text");
+  const optionsListEl = document.getElementById("options-list");
+  const feedbackEl = document.getElementById("feedback");
+  const nextBtn = document.getElementById("next-btn");
+  const scoreBoard = document.getElementById("score-board");
+  const scoreText = document.getElementById("score-text");
+  const correctText = document.getElementById("correct-text");
+  const wrongText = document.getElementById("wrong-text");
+  const resetBtn = document.getElementById("reset-btn");
+  const quizContainer = document.getElementById("quiz-container");
+
+  // Utility to shuffle array (Fisher-Yates)
+  function shuffle(array) {
+    let currentIndex = array.length, randomIndex;
+    while (currentIndex !== 0) {
+      randomIndex = Math.floor(Math.random() * currentIndex);
+      currentIndex--;
+      [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+    }
+    return array;
+  }
+
+  // Pick random questions
+  function pickQuestions() {
+    const allIndexes = [...Array(questionBank.length).keys()];
+    shuffle(allIndexes);
+    return allIndexes.slice(0, TOTAL_QUESTIONS).map(i => questionBank[i]);
+  }
+
+  // Render current question
+  function renderQuestion() {
+    answered = false;
+    nextBtn.disabled = true;
+    feedbackEl.textContent = "";
+    optionsListEl.innerHTML = "";
+
+    const q = selectedQuestions[currentQuestionIndex];
+    questionNumberEl.textContent = `Question ${currentQuestionIndex + 1} of ${TOTAL_QUESTIONS}`;
+    questionTextEl.textContent = q.question;
+
+    q.options.forEach((option, idx) => {
+      const li = document.createElement("li");
+      const btn = document.createElement("button");
+      btn.textContent = option;
+      btn.classList.add("option-btn");
+      btn.setAttribute("data-index", idx);
+      btn.setAttribute("type", "button");
+      btn.addEventListener("click", onAnswerSelected);
+      li.appendChild(btn);
+      optionsListEl.appendChild(li);
+    });
+  }
+
+  // Handle answer selection
+  function onAnswerSelected(e) {
+    if (answered) return; // Prevent multiple answers
+    answered = true;
+    const selectedBtn = e.currentTarget;
+    const selectedIdx = Number(selectedBtn.getAttribute("data-index"));
+    const currentQ = selectedQuestions[currentQuestionIndex];
+    const correctIdx = currentQ.answerIndex;
+
+    // Disable all buttons
+    Array.from(optionsListEl.children).forEach(li => {
+      const btn = li.querySelector("button");
+      btn.disabled = true;
+      if (Number(btn.getAttribute("data-index")) === correctIdx) {
+        btn.classList.add("correct");
+      }
+    });
+
+    if (selectedIdx === correctIdx) {
+      selectedBtn.classList.add("correct");
+      feedbackEl.textContent = "Correct! 🎉";
+      score++;
+    } else {
+      selectedBtn.classList.add("wrong");
+      feedbackEl.textContent = `Wrong! The correct answer is: "${currentQ.options[correctIdx]}".`;
+    }
+
+    nextBtn.disabled = false;
+  }
+
+  // Go to next question or show score
+  function onNext() {
+    currentQuestionIndex++;
+    if (currentQuestionIndex >= TOTAL_QUESTIONS) {
+      showScore();
+    } else {
+      renderQuestion();
+    }
+  }
+
+  // Show score summary
+  function showScore() {
+    quizContainer.style.display = "none";
+    scoreBoard.style.display = "block";
+    scoreText.textContent = `You scored ${score} out of ${TOTAL_QUESTIONS}.`;
+    correctText.textContent = `Correct Answers: ${score}`;
+    wrongText.textContent = `Wrong Answers: ${TOTAL_QUESTIONS - score}`;
+  }
+
+  // Reset quiz
+  function resetQuiz() {
+    selectedQuestions = pickQuestions();
+    currentQuestionIndex = 0;
+    score = 0;
+    quizContainer.style.display = "block";
+    scoreBoard.style.display = "none";
+    renderQuestion();
+  }
+
+  // Init app
+  function init() {
+    resetBtn.addEventListener("click", resetQuiz);
+    nextBtn.addEventListener("click", onNext);
+    resetQuiz();
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
